@@ -4,7 +4,7 @@ import { resolve } from "path";
 export default defineConfig({
   base: "/sierraLib/",
 
-  root: "src/", // your index.html is in the project root
+  root: "./", // your index.html is in the project root
   build: {
     outDir: "../dist", // folder for production build
     rollupOptions: {
