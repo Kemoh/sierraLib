@@ -68,8 +68,8 @@ export function renderWithTemplate(template, parentElement, data, callback) {
 export async function loadHeaderFooter() {
   try {
     // Absolute paths — Vite will rewrite them correctly
-    const headerTemplate = await loadTemplate("./partials/header.html");
-    const footerTemplate = await loadTemplate("./partials/footer.html");
+    const headerTemplate = await loadTemplate("partials/header.html");
+    const footerTemplate = await loadTemplate("partials/footer.html");
 
     const headerElement = document.querySelector("#main-header");
     const footerElement = document.querySelector("#main-footer");
@@ -203,3 +203,14 @@ export function loadItems(dataList, containerSelector, type = "app") {
 }
 
 
+// Function to trigger slideUp animation
+export function triggerSlideUpAnimation() {
+  // Remove the animation class if it already exists
+  document.body.classList.remove("animate-app");
+
+  // Force browser to recalc layout so the removal takes effect
+  void document.body.offsetWidth;
+
+  // Add the class back to trigger the animation
+  document.body.classList.add("animate-app");
+}
