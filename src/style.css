@@ -204,7 +204,7 @@ p {
   gap: 2rem;
 }
 
-.app-card, .exam-card, .science-card {
+.app-card, .exams-card, .science-card {
   border-radius: 10px;
   box-shadow: 0 3px 6px rgba(0,0,0,0.2);
   text-align: center;
@@ -230,7 +230,7 @@ p {
 
 /* Apply animation when .animate-app class is added to a parent */
 .animate-app .app-card, 
-.animate-app .exam-card, 
+.animate-app .exams-card, 
 .animate-app .science-card {
   animation: slideUp 1s ease-out forwards;
 }
@@ -280,6 +280,6 @@ p {
 
 /* End of index.html */
 
-.hidden {
+/* .hidden {
   display: none;
-}
+} */

@@ -1,7 +1,7 @@
-// Load apps
-import { appslist } from "../data/apps.js";
+// Load subjects
+import { examlist } from "../data/exams.js";
 import { loadItems, loadHeaderFooter, triggerSlideUpAnimation } from "./utils.mjs";
 
 loadHeaderFooter();
-loadItems(appslist, "#sierralib-apps", "app");
+loadItems(examlist, "#exam-type", "exams");
 triggerSlideUpAnimation();

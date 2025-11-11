@@ -4,6 +4,7 @@
   "description": "Boilerplate for WDD 330 final project",
   "main": "main.js",
   "type": "module",
+  
   "scripts": {
     "dev": "vite",
     "build": "vite build",

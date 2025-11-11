@@ -1,9 +1,25 @@
-// ===============================
+// wrapper for querySelector...returns matching element
+export function qs(selector, parent = document) {
+  return parent.querySelector(selector);
+}
+
+
+// retrieve data from localstorage
+export function getLocalStorage(key) {
+  return JSON.parse(localStorage.getItem(key));
+}
+
+
+// save data to local storage
+export function setLocalStorage(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+
 //  Hamburger Menu Setup
-// ===============================
 export function setupHamburgerMenu() {
-  const hamButton = document.querySelector("#ham-btn");
-  const navBar = document.querySelector("#animateme");
+  const hamButton = qs("#ham-btn");
+  const navBar = qs("#animateme");
 
   if (hamButton && navBar) {
     hamButton.addEventListener("click", () => {
@@ -14,9 +30,7 @@ export function setupHamburgerMenu() {
 }
 
 
-// ===============================
 //  Create getParam function
-// ===============================
 export function getParam(param) {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
@@ -24,10 +38,8 @@ export function getParam(param) {
 }
 
 
-// ===============================
-//  Load HTML Template
-// ===============================
-export async function loadTemplate(path) {
+//  Load Static HTML Template
+export async function loadStaticTemplate(path) {
   const response = await fetch(path);
   if (!response.ok) {
     throw new Error(`Failed to load template: ${path}`);
@@ -35,17 +47,33 @@ export async function loadTemplate(path) {
   return await response.text();
 }
 
-// ===============================
-//  Render Template into DOM
-// ===============================
-export function renderTemplate(template, targetElement) {
-  targetElement.innerHTML = template;
+
+// Load Dynamic HTML Template
+export async function loadDynamicTemplate(path, replacements = {}) {
+  try {
+    const response = await fetch(path);
+  if (!response.ok){
+    throw new Error(`Failed to load template: ${path}`);
+  }
+
+  let template = await response.text();
+
+  // Replace placeholders like {{type}} with actual values
+  for (const [key, value] of Object.entries(replacements)) {
+    const regex = new RegExp(`{{${key}}}`, "g");
+    template = template.replace(regex, value);
+  }
+
+  return template;
+  } catch (error) {
+    console.log(error);
+
+    return "";
+  }
 }
 
-// ===============================
-// Renders Template into Parent 
-// Element
-// ===============================
+
+// Renders Template into DOM
 
 /**
  * @param {string} template The HTML string template.
@@ -62,70 +90,47 @@ export function renderWithTemplate(template, parentElement, data, callback) {
 }
 
 
-// ===============================
 //  Load Header & Footer 
-// ===============================
 export async function loadHeaderFooter() {
   try {
-    // Absolute paths — Vite will rewrite them correctly
-    const headerTemplate = await loadTemplate("partials/header.html");
-    const footerTemplate = await loadTemplate("partials/footer.html");
+    // Detect base path automatically
+    // Works for both local & GitHub Pages
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+   
 
-    const headerElement = document.querySelector("#main-header");
-    const footerElement = document.querySelector("#main-footer");
+    // For example:
+    //  - localhost: /index.html → base = "./"
+    //  - localhost: /apps/exams.html → base = "../"
+    //  - github.io/yourrepo/apps/exams.html → base = "../"
+    const basePath =
+      pathParts.length > 1 ? "../" : "./";
 
-    if (headerElement) headerElement.innerHTML = headerTemplate;
-    if (footerElement) footerElement.innerHTML = footerTemplate;
+    
+    // Fetch templates dynamically
+    const headerTemplate = await loadStaticTemplate(`${basePath}partials/header.html`);
+    const footerTemplate = await loadStaticTemplate(`${basePath}partials/footer.html`);
 
-    setupHamburgerMenu(); // reattach your nav behavior
+    // Get the DOM elements
+    const headerElement = qs("#main-header");
+    const footerElement = qs("#main-footer");
+
+    // Render header and footer templates
+    if (headerElement && footerElement) {
+      renderWithTemplate(headerTemplate, headerElement);
+      renderWithTemplate(footerTemplate, footerElement);
+    }
+
+    // Reload Menu's function
+    setupHamburgerMenu();
+
   } catch (err) {
-    console.error("❌ Error loading header/footer:", err);
+    console.error("Error loading header/footer:", err);
   }
 }
 
 
-
-
-// export async function loadHeaderFooter() {
-//   try {
-//     // Detect project base path (works on localhost & GitHub Pages)
-//     const pathParts = window.location.pathname.split("/").filter(Boolean);
-//     const projectRoot =
-//       window.location.hostname.includes("github.io") && pathParts.length > 1
-//         ? `/${pathParts[0]}/`
-//         : "/";
-
-//     // Build full URLs
-//     const headerUrl = `${projectRoot}partials/header.html`;
-//     const footerUrl = `${projectRoot}partials/footer.html`;
-
-//     // Fetch templates
-//     const headerTemplate = await loadTemplate(headerUrl);
-//     const footerTemplate = await loadTemplate(footerUrl);
-
-//     // Inject into DOM
-//     const headerElement = document.getElementById("main-header");
-//     const footerElement = document.getElementById("main-footer");
-
-//     if (headerElement && footerElement) {
-//       renderTemplate(headerTemplate, headerElement);
-//       renderTemplate(footerTemplate, footerElement);
-
-//       // Optional: reinitialize hamburger or other nav functions
-//       if (typeof setupHamburgerMenu === "function") {
-//         setupHamburgerMenu();
-//       }
-//     }
-//   } catch (err) {
-//     console.error("Failed to load header/footer templates:", err);
-//   }
-// }
-
-
-// ===============================
 // Generic Loader For Displaying
 // List of Items 
-// ===============================
 
 /**
  * @param {Array} dataList - Array of objects containing the data
@@ -134,37 +139,41 @@ export async function loadHeaderFooter() {
  */
 
 // Create the loadItems function
-export function loadItems(dataList, containerSelector, type = "app") {
-    const container = document.querySelector(containerSelector);
-    if (!container) {
-        console.error(`Container ${containerSelector} not found.`);
-        return;
+export async function loadItems(dataList, containerSelector, type = "app") {
+  try {
+    // Detect base path automatically
+    // Works for both local & GitHub Pages
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+   
+
+    // For example:
+    //  - localhost: /index.html → base = "./"
+    //  - localhost: /apps/exams.html → base = "../"
+    //  - github.io/yourrepo/apps/exams.html → base = "../"
+    const basePath =
+      pathParts.length > 1 ? "../" : "./";
+
+
+    // Find the container to render the cards
+    const container = qs(containerSelector);
+
+    // Fetch templates dynamically
+    const templateHTML = await loadDynamicTemplate(`${basePath}partials/itemtemplate.html`, {type});
+
+    if (container) {
+      renderWithTemplate(templateHTML, container)
     }
-
-    // Create and inject HTML structure
-    container.innerHTML = `
-      <section class="${type}-section" >
-        <div id="show-${type}-cards" class="cards-grid"></div>
-
-        <dialog id="${type}-dialog" class="${type}-dialog">
-          <div class="dialog-header">
-            <h3 id="${type}-title"></h3>
-            <button id="close-${type}-btn" class="close-btn">&times;</button>
-          </div>
-          
-          <p id="${type}-description"></p>
-          <a id="${type}-link" href="#" class="open-btn">Open ${type}</a>
-        </dialog>
-      </section>
-    `;
-
+    else {
+        console.error(`Container ${containerSelector} not found.`);
+      }
+    
     // Get modal and content elements
-    const dialog = document.querySelector(`#${type}-dialog`);
-    const title = document.querySelector(`#${type}-title`);
-    const description = document.querySelector(`#${type}-description`);
-    const openLink = document.querySelector(`#${type}-link`);
-    const closeBtn = document.querySelector(`#close-${type}-btn`);
-    const cardsContainer = document.querySelector(`#show-${type}-cards`);
+    const dialog = qs(`#${type}-dialog`);
+    const title = qs(`#${type}-title`);
+    const description = qs(`#${type}-description`);
+    const openLink = qs(`#${type}-link`);
+    const closeBtn = qs(`#close-${type}-btn`);
+    const cardsContainer = qs(`#show-${type}-cards`);
 
     // Close dialog
     closeBtn.addEventListener("click", () => dialog.close());
@@ -175,6 +184,7 @@ export function loadItems(dataList, containerSelector, type = "app") {
         card.classList.add(`${type}-card`);
         card.style.backgroundColor = item.cardColor;
 
+        // Builds card's content
         const img = document.createElement("img");
         img.src = item.appImage || item.subjectImage || item.subjectImage;
         img.alt = `${item.appName || item.subjectName || item.subjectTitle} logo`;
@@ -183,10 +193,11 @@ export function loadItems(dataList, containerSelector, type = "app") {
         const cardTitle = document.createElement("h2");
         cardTitle.textContent = item.appName || item.subjectName || item.subjectTitle;
 
-        // Add dataset attributes
+        // Store extra data in dataset
         card.dataset.title = item.appName || item.subjectName || item.subjectTitle;
         card.dataset.description = item.appDescription || item.subjectDescription;
         card.dataset.link = item.streamLink || item.subjectLink;
+
 
         // Card click opens modal
         card.addEventListener("click", () => {
@@ -200,6 +211,10 @@ export function loadItems(dataList, containerSelector, type = "app") {
         card.append(cardTitle, img);
         cardsContainer.appendChild(card);
     });
+
+  } catch (err) {
+    console.error("Error loading header/footer:", err);
+  } 
 }
 
 
